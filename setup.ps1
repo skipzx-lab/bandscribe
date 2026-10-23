@@ -1,6 +1,6 @@
 # Creates .venv and installs everything, with the PyTorch build for your GPU.
-#   .\setup.ps1                 # auto-detect NVIDIA / AMD / Intel Arc / CPU
-#   .\setup.ps1 -Gpu cuda       # force one: cuda | rocm | xpu | cpu
+#   powershell -ExecutionPolicy Bypass -File .\setup.ps1              # auto-detect NVIDIA / AMD / Intel Arc / CPU
+#   powershell -ExecutionPolicy Bypass -File .\setup.ps1 -Gpu cuda    # force one: cuda | rocm | xpu | cpu
 param(
     [ValidateSet("auto", "cuda", "rocm", "xpu", "cpu")] [string]$Gpu = "auto",
     [string]$Venv = ".venv"
@@ -83,4 +83,4 @@ $env:PYTHONPATH = "$PSScriptRoot\backend"
 if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
     Write-Warning "ffmpeg was not found on PATH. Install it with: winget install Gyan.FFmpeg"
 }
-Write-Host "Done. Start with .\run.ps1" -ForegroundColor Green
+Write-Host "Done. Start Bandscribe with:  powershell -ExecutionPolicy Bypass -File .\run.ps1" -ForegroundColor Green

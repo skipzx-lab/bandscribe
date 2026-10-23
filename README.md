@@ -25,23 +25,157 @@ accounts and no uploads.
 
 ## Install
 
-You need **Python 3.12 or 3.11** and **ffmpeg** (`winget install Gyan.FFmpeg`,
-`brew install ffmpeg` or `apt install ffmpeg`).
+You don't need to know git or Python. Copy each command below, paste it into the terminal
+window, and press **Enter**. Installing takes 5–15 minutes and about 5 GB of disk space.
+
+### Windows 10 / 11
+
+**1. Open PowerShell.** Press the **Start** button, type `PowerShell`, and press **Enter**.
+A window with a blue or black background opens. You'll paste the commands there
+with **Ctrl+V** or a right-click.
+
+**2. Install the three tools Bandscribe needs** (Git, Python and ffmpeg). Paste these one at a
+time. If Windows asks for permission, click **Yes**.
 
 ```powershell
-# Windows
-.\setup.ps1          # detects your GPU and installs the matching PyTorch build
-.\run.ps1            # opens http://localhost:8765
+winget install --id Git.Git -e --accept-source-agreements --accept-package-agreements
+```
+```powershell
+winget install --id Python.Python.3.12 -e --accept-source-agreements --accept-package-agreements
+```
+```powershell
+winget install --id Gyan.FFmpeg -e --accept-source-agreements --accept-package-agreements
 ```
 
+**3. Close PowerShell and open it again** (same as step 1), so it can find the tools you just installed.
+
+**4. Download Bandscribe and set it up.** Paste these one at a time:
+
+```powershell
+cd $HOME
+```
+```powershell
+git clone https://github.com/skipzx-lab/bandscribe.git
+```
+```powershell
+cd bandscribe
+```
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup.ps1
+```
+
+Setup finds your graphics card and installs everything to match. It's done when you see
+**Done** in green.
+
+**5. Start it:**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\run.ps1
+```
+
+Your browser opens Bandscribe at http://localhost:8765. Leave the PowerShell window open while
+you use it. To stop Bandscribe, click that window and press **Ctrl+C**.
+
+**Next time**, open PowerShell and paste:
+
+```powershell
+cd $HOME\bandscribe; powershell -ExecutionPolicy Bypass -File .\run.ps1
+```
+
+### macOS
+
+**1. Open Terminal.** Press **Cmd+Space**, type `Terminal`, and press **Enter**.
+
+**2. Install Homebrew** (a free installer for tools like these). Skip this if you already have it.
+It asks for your Mac password; nothing appears while you type it, which is normal. When it
+finishes, run the two `echo`/`eval` lines it prints under "Next steps".
+
 ```bash
-# Linux / macOS
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+**3. Install Git, Python and ffmpeg:**
+
+```bash
+brew install git python@3.12 ffmpeg
+```
+
+**4. Download Bandscribe, set it up and start it.** Paste these one at a time:
+
+```bash
+cd ~
+```
+```bash
+git clone https://github.com/skipzx-lab/bandscribe.git
+```
+```bash
+cd bandscribe
+```
+```bash
 ./setup.sh
+```
+```bash
 ./run.sh
 ```
 
-Force a build with `.\setup.ps1 -Gpu cuda|rocm|xpu|cpu` or `./setup.sh cuda|rocm|xpu|mps|cpu`.
-The first song takes a few extra minutes while the models download.
+Your browser opens Bandscribe at http://localhost:8765. Leave Terminal open while you use it,
+and press **Ctrl+C** in it to stop. **Next time:** `cd ~/bandscribe && ./run.sh`
+
+### Linux (Ubuntu 24.04)
+
+```bash
+sudo apt update && sudo apt install -y git python3 python3-venv ffmpeg
+```
+```bash
+cd ~ && git clone https://github.com/skipzx-lab/bandscribe.git && cd bandscribe
+```
+```bash
+./setup.sh
+```
+```bash
+./run.sh
+```
+
+Other distributions work too, as long as the `python3.12` or `python3.11` command exists.
+Setup doesn't use newer Pythons yet. On Ubuntu 22.04, install it first with
+`sudo apt install -y python3.11 python3.11-venv`. Elsewhere, install Python 3.12 with your
+package manager, [pyenv](https://github.com/pyenv/pyenv) or [uv](https://docs.astral.sh/uv/).
+
+### Updating to the latest version
+
+Open the terminal, go into the folder, pull the changes and run setup again:
+
+```powershell
+cd $HOME\bandscribe; git pull; powershell -ExecutionPolicy Bypass -File .\setup.ps1
+```
+```bash
+cd ~/bandscribe && git pull && ./setup.sh
+```
+
+(The first is for Windows, the second for macOS and Linux.) Your songs are kept.
+
+### Without git
+
+On this page, click the green **Code** button, then **Download ZIP**, and unzip it. On
+Windows, open the unzipped folder, click the address bar, type `powershell` and press
+**Enter**. That opens PowerShell inside the folder. Then do steps 2–3 above, skip the `git`
+and `cd` commands in step 4, and continue with `setup.ps1`. To update, download the ZIP
+again and copy your `data` folder (your songs) into the new one.
+
+### If something goes wrong
+
+- **"winget is not recognized":** update **App Installer** from the Microsoft Store, then try again.
+- **"py is not recognized" or "Python 3.12 or 3.11 is required":** close and reopen PowerShell
+  (step 3). If it still fails, install Python from https://www.python.org/downloads/ and tick
+  **"Add python.exe to PATH"** in the installer.
+- **"ffmpeg was not found":** close and reopen the terminal, then run the start command again.
+- **Choosing the GPU yourself:** setup picks automatically. To override it, add `-Gpu cuda`,
+  `-Gpu rocm`, `-Gpu xpu` or `-Gpu cpu` to the setup command on Windows, or pass `cuda`,
+  `rocm`, `xpu`, `mps` or `cpu` to `./setup.sh`.
+- **Graphics drivers:** for GPU speed, keep your NVIDIA, AMD (26.2.2 or newer) or Intel Arc
+  driver up to date.
+
+The first song takes a few extra minutes while the AI models download.
 
 ### Hardware
 
