@@ -77,10 +77,17 @@ def _split_lines(words: list[dict]) -> list[list[dict]]:
     return lines
 
 
+def _samples(path: Path) -> np.ndarray:
+    """16 kHz mono samples for Whisper. Decoding here keeps faster-whisper off PyAV, whose
+    open() signature differs between versions ("unexpected keyword 'metadata_errors'")."""
+    y, _ = librosa.load(str(path), sr=16000, mono=True)
+    return y.astype(np.float32)
+
+
 def transcribe(path: Path, size: str = "small", language: str | None = None) -> dict:
     model = _get_model(size if size in WHISPER_MODELS else "small")
     segments, info = model.transcribe(
-        str(path),
+        _samples(path),
         language=language or None,
         word_timestamps=True,
         # Silero VAD is tuned for speech and drops whole sung sections, and
@@ -202,7 +209,7 @@ def _gaps(n: int, times: dict, duration: float) -> list[tuple[int, int, float, f
 def _transcribe_clip(path: Path, t0: float, t1: float, prompt: str, size: str, language: str | None) -> list[dict]:
     """Transcribe one stretch of the vocal stem, primed with the lyrics we expect there."""
     segments, _ = _get_model(size).transcribe(
-        str(path), language=language or None, word_timestamps=True, vad_filter=False, beam_size=5,
+        _samples(path), language=language or None, word_timestamps=True, vad_filter=False, beam_size=5,
         clip_timestamps=[t0, t1], initial_prompt=prompt, condition_on_previous_text=True,
     )
     return [{"text": w.word.strip(), "start": round(w.start, 3), "end": round(w.end, 3)}
