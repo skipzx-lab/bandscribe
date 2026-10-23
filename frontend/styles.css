@@ -69,6 +69,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 24px; }
 .stages li::before { content: "○ "; }
 .stages li.active::before { content: "◐ "; }
 .stages li.done::before { content: "● "; }
+.stages li.failed { color: var(--danger); }
+.stages li.failed::before { content: "✕ "; }
 .bigbar { height: 8px; margin-top: 16px; width: 100%; }
 .error-box { white-space: pre-wrap; font-family: var(--mono); font-size: 13px; color: var(--danger); background: #221416; padding: 12px; border-radius: 8px; }
 

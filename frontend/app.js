@@ -48,7 +48,7 @@ const STAGES = [
   ["rhythm", "Finding the beat"],
   ["chords", "Detecting chords"],
   ["lyrics", "Transcribing lyrics"],
-  ["tab", "Writing tablature"],
+  ["parts", "Transcribing each instrument"],
   ["finish", "Encoding audio"],
 ];
 // Open-string MIDI pitches, low to high
@@ -246,7 +246,7 @@ function showProgress(job) {
       <p class="facts" style="margin:6px 0 0">${failed ? "Processing failed" : job.status === "queued" && idx < 0 ? "Waiting in queue…" : esc(job.stage_label || "")}</p>
       <div class="bar bigbar"><i style="width:${Math.round((job.progress || 0) * 100)}%"></i></div>
       <ul class="stages">
-        ${STAGES.map(([id, label], i) => `<li class="${i < idx ? "done" : i === idx ? (failed ? "" : "active") : ""}">${label}</li>`).join("")}
+        ${STAGES.map(([id, label], i) => `<li class="${i < idx ? "done" : i === idx ? (failed ? "failed" : "active") : ""}">${label}</li>`).join("")}
       </ul>
       ${failed ? `<p class="error-box">${esc(job.error || "Unknown error")}</p><button class="primary" id="retry">Retry</button>` : ""}
       <p class="hint" style="margin-top:18px">The first run downloads the separation and lyrics models, which takes a few extra minutes.</p>
