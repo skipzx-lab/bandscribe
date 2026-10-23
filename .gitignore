@@ -1,0 +1,10 @@
+# Python
+.venv*/
+__pycache__/
+*.pyc
+
+# Your songs, stems and transcriptions: never commit these
+data/
+
+# Logs
+*.log

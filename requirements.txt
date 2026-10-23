@@ -1,0 +1,17 @@
+# PyTorch is installed by setup.ps1 / setup.sh from the build that matches your GPU.
+# basic-pitch is installed with --no-deps (to skip TensorFlow), so its runtime deps are listed here.
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+numpy>=1.26,<2.3
+scipy>=1.11
+librosa>=0.10.2
+soundfile>=0.12
+demucs>=4.1.0
+faster-whisper>=1.1
+onnxruntime>=1.18
+mir_eval>=0.7
+pretty_midi>=0.2.10
+resampy>=0.4.2
+scikit-learn>=1.3
+typing_extensions>=4.0
