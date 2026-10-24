@@ -35,6 +35,7 @@ const api = {
   },
   rename: (id, title) => fetch(`/api/jobs/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title }) }).then(json),
   upgrade: id => fetch(`/api/jobs/${id}/parts`, { method: "POST" }).then(json),
+  lows: id => fetch(`/api/jobs/${id}/lows`).then(json),
   lyrics: (id, text) => fetch(`/api/jobs/${id}/lyrics`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) }).then(json),
   tuning: (id, body) => fetch(`/api/jobs/${id}/tuning`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(json),
   save: (id, result) => fetch(`/api/jobs/${id}/result`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(result) }).then(json),
@@ -58,7 +59,7 @@ const TUNINGS = [
   ["Half step down", STANDARD.map(p => p - 1)],
   ["Whole step down", STANDARD.map(p => p - 2)],
   ["Drop D", [38, 45, 50, 55, 59, 64]],
-  ["Drop C#", [37, 44, 49, 54, 58, 63]],
+  ["Drop Db", [37, 44, 49, 54, 58, 63]],
   ["Drop C", [36, 43, 48, 53, 57, 62]],
   ["DADGAD", [38, 45, 50, 55, 57, 62]],
   ["Open G", [38, 43, 50, 55, 59, 62]],
@@ -66,6 +67,9 @@ const TUNINGS = [
 ];
 // How far the chord shapes sit from the sounding pitch: the A string is the reference.
 const tuningShift = strings => strings[1] - STANDARD[1];
+// The drop version of each uniform tuning, and older names for the same tunings.
+const DROPS = { "Standard": "Drop D", "Half step down": "Drop Db", "Whole step down": "Drop C" };
+const TUNING_ALIASES = { "Drop C#": "Drop Db" };
 const isUniformShift = strings => strings.every((p, i) => p - STANDARD[i] === strings[0] - STANDARD[0]);
 const UKULELE = [67, 60, 64, 69]; // G C E A (re-entrant)
 const PART_VIEWS = [["guitar", "Guitar tab"], ["bass", "Bass tab"], ["piano", "Piano"], ["drums", "Drums"], ["melody", "Melody"]];
@@ -404,6 +408,7 @@ function showSong(job) {
   const tuningSel = app.querySelector("#tuning");
   const capoSel = app.querySelector("#capo");
   const syncTuningControls = () => {
+    r.tuning.name = TUNING_ALIASES[r.tuning.name] || r.tuning.name;
     if (!TUNINGS.some(([n]) => n === r.tuning.name)) tuningSel.add(new Option(r.tuning.name));
     tuningSel.value = r.tuning.name;
     capoSel.value = String(r.tuning.capo);
@@ -430,8 +435,11 @@ function showSong(job) {
   tuningSel.onchange = () => setTuning(tuningSel.value, +capoSel.value);
   capoSel.onchange = () => setTuning(tuningSel.value, +capoSel.value);
 
-  // Suggest a down-tuning when the chords would then be open shapes (e.g. Db -> D on Eb tuning).
-  function renderSuggestion() {
+  // Suggest a down-tuning when the chords would then be open shapes (e.g. Db -> D on Eb tuning),
+  // and its drop version when the guitar keeps playing a note a tone below the lowest string.
+  let lows = null;
+  const lower = name => name[0].toLowerCase() + name.slice(1); // "Drop Db" -> "drop Db"
+  async function renderSuggestion() {
     const box = app.querySelector("#suggest");
     box.innerHTML = "";
     if (store.get(`tuneHintOff.${id}`, false)) return;
@@ -444,18 +452,35 @@ function showSong(job) {
       return open / total;
     };
     const current = fit(r.tuning.strings);
-    const [bestName, bestStrings] = TUNINGS.slice(0, 3)
-      .reduce((best, t) => (fit(t[1]) > fit(best[1]) ? t : best), TUNINGS[0]);
-    const best = fit(bestStrings);
-    if (bestName === r.tuning.name || best < current + 0.2) return;
-    const o = -tuningShift(bestStrings) - r.tuning.capo;
+    const uniform = TUNINGS.slice(0, 3);
+    let [family, familyStrings] = uniform.reduce((best, t) => (fit(t[1]) > fit(best[1]) ? t : best), uniform[0]);
+    if (fit(familyStrings) < current + 0.2) {
+      // Keep the current chord shapes; only the low string can still change.
+      const same = uniform.find(([, st]) => tuningShift(st) === tuningShift(r.tuning.strings));
+      if (!same) return;
+      [family, familyStrings] = same;
+    }
+    if (!lows && r.parts?.guitar) lows = await api.lows(id).catch(() => ({ total: 0, lows: {} }));
+    const dropNote = familyStrings[0] - 2;
+    const dropSecs = lows?.lows?.[dropNote] || 0;
+    const dropped = dropSecs >= 4 && dropSecs >= 0.02 * lows.total;
+    const [name, strings] = dropped ? TUNINGS.find(([n]) => n === DROPS[family]) : [family, familyStrings];
+    // Never talk someone out of a drop tuning they picked.
+    if (name === r.tuning.name || (!dropped && DROPS[name] === r.tuning.name)) return;
+    const o = -tuningShift(strings) - r.tuning.capo;
     const sample = [...new Set(r.chords.filter(s => s.chord !== "N").map(s => spell(s.chord, o)))].slice(0, 5).join(", ");
+    const shapes = family === r.tuning.name || tuningShift(strings) === tuningShift(r.tuning.strings) ? ""
+      : `These chords look like open shapes on a guitar tuned <b>${lower(family)}</b> (${sample}…):
+         ${Math.round(fit(strings) * 100)}% open shapes, versus ${Math.round(current * 100)}% in ${lower(r.tuning.name)}. `;
+    const drop = dropped
+      ? `The guitar plays a low ${Chords.FLATS[dropNote % 12]} for ${Math.round(dropSecs)}s, a tone below the
+         lowest string of ${lower(family)}, so the low string looks dropped: <b>${lower(name)}</b>.`
+      : "";
     box.innerHTML = `<div class="suggest">
-      <span>These chords look like open shapes on a guitar tuned <b>${bestName.toLowerCase()}</b> (${sample}…).
-      ${Math.round(best * 100)}% open shapes, versus ${Math.round(current * 100)}% in ${r.tuning.name.toLowerCase()}.</span>
-      <button class="primary" id="useTuning">Use ${bestName.toLowerCase()}</button>
+      <span>${shapes}${drop}</span>
+      <button class="primary" id="useTuning">Use ${lower(name)}</button>
       <button id="noTuning">Dismiss</button></div>`;
-    box.querySelector("#useTuning").onclick = () => setTuning(bestName, r.tuning.capo);
+    box.querySelector("#useTuning").onclick = () => setTuning(name, r.tuning.capo);
     box.querySelector("#noTuning").onclick = () => { store.set(`tuneHintOff.${id}`, true); box.innerHTML = ""; };
   }
 

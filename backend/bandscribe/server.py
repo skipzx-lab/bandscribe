@@ -120,6 +120,21 @@ def set_tuning(job_id: str, payload: dict = Body(...)):
     return {"parts": result["parts"], "tuning": result["tuning"]}
 
 
+@app.get("/api/jobs/{job_id}/lows")
+def guitar_lows(job_id: str):
+    """Seconds the guitar part spends on each low note, so the page can spot a dropped low string."""
+    if _get(job_id)["status"] != "done":
+        raise HTTPException(409, "job is not finished")
+    lows: dict[int, float] = {}
+    total = 0.0
+    for n in pipeline.load_notes(store.dir(job_id), "guitar"):
+        length = n["end"] - n["start"]
+        total += length
+        if n["pitch"] < 46:
+            lows[n["pitch"]] = round(lows.get(n["pitch"], 0.0) + length, 2)
+    return {"total": round(total, 2), "lows": lows}
+
+
 @app.post("/api/jobs/{job_id}/parts")
 def upgrade_parts(job_id: str):
     """Transcribe bass, piano, drums and melody for a song processed before they existed."""
