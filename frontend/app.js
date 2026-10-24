@@ -695,11 +695,12 @@ function showSong(job) {
       return `BD kick · SD snare · HH hi-hat · CR crash, one character per 16th note (counted 1 e + a) · ${tab.note_count} hits${midi}. Detected from the drum stem, so ghost notes and toms are left out.`;
     }
     const where = `Transcribed from the <b>${esc(STEM_LABELS[tab.source] || tab.source)}</b> stem`;
-    const tuning = `${esc(r.tuning.name.toLowerCase())} (${tab.tuning})`;
+    const tuning = `${esc(r.tuning.name[0].toLowerCase() + r.tuning.name.slice(1))} (${tab.tuning})`;
+    const legato = "h hammer-on · p pull-off · / \\ slide";
     if (part === "bass") {
-      return `${where} · ${tuning} · ${tab.note_count} notes, kept to the bass's usual range${midi}. Check octaves by ear.`;
+      return `${where} · ${tuning} · ${tab.note_count} notes, kept to the bass's usual range · ${legato}${midi}. Check octaves by ear.`;
     }
-    return `${where} · ${tuning}${tab.capo ? ` · capo ${tab.capo}, frets counted from the capo` : ""} · ${tab.note_count} notes${st.semis ? " · the tab ignores the key transpose" : ""}${midi}. Automatic tabs are a starting point, so check them by ear.`;
+    return `${where} · ${tuning}${tab.capo ? ` · capo ${tab.capo}, frets counted from the capo` : ""} · ${tab.note_count} notes · ${legato}${st.semis ? " · the tab ignores the key transpose" : ""}${midi}. Automatic tabs are a starting point, so check them by ear.`;
   }
 
   function renderTab(part) {
